@@ -1,8 +1,4 @@
 /**
- * Marlin2ForPipetBot [https://github.com/DerAndere1/Marlin]
- * Copyright 2019 - 2024 DerAndere and other Marlin2ForPipetBot authors [https://github.com/DerAndere1/Marlin]
- *
- * Based on:
  * Marlin 3D Printer Firmware
  * Copyright (c) 2020 MarlinFirmware [https://github.com/MarlinFirmware/Marlin]
  *
@@ -65,15 +61,21 @@
 // @section info
 
 // Author info of this build printed to the host during boot and M115
-#define STRING_CONFIG_H_AUTHOR "(none, default config)" // Original author or contributor.
+#define STRING_CONFIG_H_AUTHOR "Rep5x" // Original author or contributor.
 //#define CUSTOM_VERSION_FILE Version.h // Path from the root directory (no quotes)
 
 // @section machine
 
 // Choose the name from boards.h that matches your setup
 #ifndef MOTHERBOARD
-  #define MOTHERBOARD BOARD_RAMPS_14_EFB
+  #define MOTHERBOARD BOARD_BTT_OCTOPUS_V1_1
 #endif
+
+// Rep5x custom pin assignments for A-axis (I) and B-axis (J) endstops
+// A-axis endstop on J30 (PG13), B-axis endstop on J32 = E2DET (PG14)
+// Using I_MIN_PIN and J_MIN_PIN since both axes home to MIN direction
+#define I_MIN_PIN PG13   // A-axis endstop (J30)
+#define J_MIN_PIN PG14   // B-axis endstop (J32 / E2DET)
 
 // @section serial
 
@@ -85,7 +87,7 @@
  *
  * :[-1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
  */
-#define SERIAL_PORT 0
+#define SERIAL_PORT -1
 
 /**
  * Serial Port Baud Rate
@@ -128,11 +130,18 @@
   //#define RS485_BUS_BUFFER_SIZE 128
 #endif
 
+// Enable CAN bus support and protocol
+//#define CAN_HOST
+//#define CAN_TOOLHEAD
+#if ANY(CAN_HOST, CAN_TOOLHEAD)
+  //#define CAN_DEBUG
+#endif
+
 // Enable the Bluetooth serial interface on AT90USB devices
 //#define BLUETOOTH
 
 // Name displayed in the LCD "Ready" message and Info menu
-//#define CUSTOM_MACHINE_NAME "3D Printer"
+#define CUSTOM_MACHINE_NAME "Rep5x"
 //#define CONFIGURABLE_MACHINE_NAME // Add G-code M550 to set/report the machine name
 
 // Printer's unique ID, used by some programs to differentiate between machines.
@@ -156,21 +165,21 @@
  *          TMC5130, TMC5130_STANDALONE, TMC5160, TMC5160_STANDALONE
  * :['A4988', 'A5984', 'DRV8825', 'LV8729', 'TB6560', 'TB6600', 'TMC2100', 'TMC2130', 'TMC2130_STANDALONE', 'TMC2160', 'TMC2160_STANDALONE', 'TMC2208', 'TMC2208_STANDALONE', 'TMC2209', 'TMC2209_STANDALONE', 'TMC2240', 'TMC2660', 'TMC2660_STANDALONE', 'TMC5130', 'TMC5130_STANDALONE', 'TMC5160', 'TMC5160_STANDALONE']
  */
-#define X_DRIVER_TYPE  A4988
-#define Y_DRIVER_TYPE  A4988
-#define Z_DRIVER_TYPE  A4988
+#define X_DRIVER_TYPE  TMC2208
+#define Y_DRIVER_TYPE  TMC2208
+#define Z_DRIVER_TYPE  TMC2208
 //#define X2_DRIVER_TYPE A4988
 //#define Y2_DRIVER_TYPE A4988
 //#define Z2_DRIVER_TYPE A4988
 //#define Z3_DRIVER_TYPE A4988
 //#define Z4_DRIVER_TYPE A4988
-//#define I_DRIVER_TYPE  A4988
-//#define J_DRIVER_TYPE  A4988
+#define I_DRIVER_TYPE  TMC2208
+#define J_DRIVER_TYPE  TMC2208
 //#define K_DRIVER_TYPE  A4988
 //#define U_DRIVER_TYPE  A4988
 //#define V_DRIVER_TYPE  A4988
 //#define W_DRIVER_TYPE  A4988
-#define E0_DRIVER_TYPE A4988
+#define E0_DRIVER_TYPE TMC2208
 //#define E1_DRIVER_TYPE A4988
 //#define E2_DRIVER_TYPE A4988
 //#define E3_DRIVER_TYPE A4988
@@ -197,7 +206,7 @@
  * Regardless of these settings the axes are internally named I, J, K, U, V, W.
  */
 #ifdef I_DRIVER_TYPE
-  #define AXIS4_NAME 'A' // :['A', 'B', 'C', 'U', 'V', 'W']
+  #define AXIS4_NAME 'C' // :['A', 'B', 'C', 'U', 'V', 'W']  // Rep5x: C-axis (yaw)
   #define AXIS4_ROTATES
 #endif
 #ifdef J_DRIVER_TYPE
@@ -223,14 +232,8 @@
 
 // @section extruder
 
-/**
- * This defines the number of tools, including extruders, laser and spindle tools. 
- * Tool indices, starting with 0, must be assigned in the following order: opional extruders (requires EXTRUDERS > 0), 
- * an optional laser (requires LASER_FEATURE), and finally optional tools for a spindle (requires SPINDLE_FEATURE). 
- * Offsets of each tool from tool 0 must be defined with HOTEND_OFFSET_X, HOTEND_OFFSET_Y and HOTEND_OFFSET_Z
- */
-// :[0, 1, 2, ..., 127]
-//#define TOOLS 1
+// Rep5x: TOOLS required for tool length compensation (G43/G49) to work
+#define TOOLS 3
 
 // This defines the number of extruders
 // :[0, 1, 2, 3, 4, 5, 6, 7, 8]
@@ -319,18 +322,6 @@
 #endif
 
 /**
- * Differential Extruder
- *
- * The X and E steppers work together to create a differential drive system.
- * Simple  : E steps = X + E   ; X steps = X  (E drives a loop, X stays the same)
- * Balanced: E steps = X + E/2 ; X steps = X - E/2  (Dual loop system)
- */
-//#define DIFFERENTIAL_EXTRUDER
-#if ENABLED(DIFFERENTIAL_EXTRUDER)
-  //#define BALANCED_DIFFERENTIAL_EXTRUDER
-#endif
-
-/**
  * Switching Toolhead
  *
  * Support for swappable and dockable toolheads, such as
@@ -355,14 +346,7 @@
  */
 //#define ELECTROMAGNETIC_SWITCHING_TOOLHEAD
 
-
-// Safe toolchange start Z position.
-//#define SAFE_TOOLCHANGE_START_Z           200
-
 #if ANY(SWITCHING_TOOLHEAD, MAGNETIC_SWITCHING_TOOLHEAD, ELECTROMAGNETIC_SWITCHING_TOOLHEAD)
-  //#define SWITCHING_TOOLHEAD_Z_POS        100         // (mm) Z position of the toolhead dock.
-                                                        // Leave this option disabled if the bed can move in Z direction
-  //#define SWITCHING_TOOLHEAD_Z_CLEAR       60         // (mm) Minimum distance from dock along Z for unobstructed X axis if the tools are placed onto the dock in Z direction
   #define SWITCHING_TOOLHEAD_Y_POS          235         // (mm) Y position of the toolhead dock
   #define SWITCHING_TOOLHEAD_Y_SECURITY      10         // (mm) Security distance Y axis
   #define SWITCHING_TOOLHEAD_Y_CLEAR         60         // (mm) Minimum distance from dock for unobstructed X axis
@@ -407,13 +391,18 @@
 
 // Offset of the extruders (uncomment if using more than one and relying on firmware to position when changing).
 // The offset has to be X=0, Y=0 for the extruder 0 hotend (default extruder).
-// For the other hotends it is their distance from the extruder 0 hotend in positive axis direction.
-//#define HOTEND_OFFSET_X { 0.0, 20.00 } // (mm) relative X-offset for each nozzle
-//#define HOTEND_OFFSET_Y { 0.0, 5.00 }  // (mm) relative Y-offset for each nozzle
-//#define HOTEND_OFFSET_Z { 0.0, 0.00 }  // (mm) relative Z-offset for each nozzle
+// For the other hotends it is their distance from the extruder 0 hotend.
+// Rep5x: Required for tool length compensation (G43/G49)
+#define HOTEND_OFFSET_X { 0.0, 0.0, 10 }   // (mm) relative X-offset for each nozzle
+#define HOTEND_OFFSET_Y { 0.0, 0.0, -22 }  // (mm) relative Y-offset for each nozzle
+#define HOTEND_OFFSET_Z { 0.0, -10.0, -2.2 }  // (mm) relative Z-offset for each nozzle
 
-// Enable and disable tool length compensation with G43 and G49, respectively. true: Enabled by default. false: Disabled by default.
-//#define DEFAULT_TOOL_LENGTH_COMPENSATION true
+// Rep5x: Enable G43/G49 commands (required for IK)
+#define DEFAULT_TOOL_LENGTH_COMPENSATION false
+
+// Rep5x: Enable inverse kinematics (tool centerpoint control) by default
+// G43.4 to enable, G49 to disable at runtime
+#define DEFAULT_TOOL_CENTERPOINT_CONTROL true
 
 // @section multi-material
 
@@ -523,7 +512,7 @@
  *    10 : 100kΩ RS PRO 198-961
  *    11 : 100kΩ Keenovo AC silicone mats, most Wanhao i3 machines - beta 3950, 1%
  *    12 : 100kΩ Vishay 0603 SMD NTCS0603E3104FXT (#8) - calibrated for Makibox hot bed
- *    13 : 100kΩ Hisense up to 300°C - for "Simple ONE" & "All In ONE" hotend - beta 3950, 1%
+ *    13 : 100kΩ Hisens up to 300°C - for "Simple ONE" & "All In ONE" hotend - beta 3950, 1%
  *    14 : 100kΩ  (R25), 4092K (beta25), 4.7kΩ pull-up, bed thermistor as used in Ender-5 S1
  *    15 : 100kΩ Calibrated for JGAurora A5 hotend
  *    17 : 100kΩ Dagoma NTC white thermistor
@@ -845,9 +834,9 @@
 
   // 120V 250W silicone heater into 4mm borosilicate (MendelMax 1.5+)
   // from FOPDT model - kp=.39 Tp=405 Tdead=66, Tc set to 79.2, aggressive factor of .15 (vs .1, 1, 10)
-  #define DEFAULT_BED_KP  10.00
-  #define DEFAULT_BED_KI   0.023
-  #define DEFAULT_BED_KD 305.4
+  #define DEFAULT_bedKp  10.00
+  #define DEFAULT_bedKi   0.023
+  #define DEFAULT_bedKd 305.4
 
   // FIND YOUR OWN: "M303 E-1 C8 S90" to run autotune on the bed at 90 degreesC for 8 cycles.
 #else
@@ -928,9 +917,9 @@
 
   // Lasko "MyHeat Personal Heater" (200w) modified with a Fotek SSR-10DA to control only the heating element
   // and placed inside the small Creality printer enclosure tent.
-  #define DEFAULT_CHAMBER_KP  37.04
-  #define DEFAULT_CHAMBER_KI   1.40
-  #define DEFAULT_CHAMBER_KD 655.17
+  #define DEFAULT_chamberKp  37.04
+  #define DEFAULT_chamberKi   1.40
+  #define DEFAULT_chamberKd 655.17
   // M309 P37.04 I1.04 D655.17
 
   // FIND YOUR OWN: "M303 E-2 C8 S50" to run autotune on the chamber at 50 degreesC for 8 cycles.
@@ -965,7 +954,7 @@
  * Note: For Bowden Extruders make this large enough to allow load/unload.
  */
 #define PREVENT_LENGTHY_EXTRUDE
-#define EXTRUDE_MAXLENGTH 200
+#define EXTRUDE_MAXLENGTH 650
 
 //===========================================================================
 //======================== Thermal Runaway Protection =======================
@@ -1088,8 +1077,7 @@
   // Delta radius and diagonal rod adjustments
   //#define DELTA_RADIUS_TRIM_TOWER       { 0.0, 0.0, 0.0 } // (mm)
   //#define DELTA_DIAGONAL_ROD_TRIM_TOWER { 0.0, 0.0, 0.0 } // (mm)
-
-#endif // DELTA
+#endif
 
 // @section scara
 
@@ -1145,37 +1133,17 @@
   #define TPARA_LINKAGE_1 120     // (mm)
   #define TPARA_LINKAGE_2 120     // (mm)
 
-  // Height of the Shoulder axis (pivot) relative to the tower floor
-  #define TPARA_SHOULDER_AXIS_HEIGHT 135.0     // (mm)
-
-  // The position of the last linkage relative to the robot arm origin
-  // (intersection of the base axis and floor) when at the home position
-  #define TPARA_ARM_X_HOME_POS  28.75  // (mm) Measured from shoulder axis to tool holder axis in home position
-  #define TPARA_ARM_Y_HOME_POS   0     // (mm)
-  #define TPARA_ARM_Z_HOME_POS 250.00  // (mm) Measured from tool holder axis to the floor
-
-  // TPARA Workspace offset relative to the tower (position of workspace origin relative to robot Tower origin )
+  // TPARA tower offset (position of Tower relative to bed zero position)
   // This needs to be reasonably accurate as it defines the printbed position in the TPARA space.
-  #define TPARA_OFFSET_X    127.0     // (mm) to coincide with minimum radius MIDDLE_DEAD_ZONE_R, and W(0,0,0) is reachable
-  #define TPARA_OFFSET_Y      0.0     // (mm)
-  #define TPARA_OFFSET_Z      0.0     // (mm)
-
-  // TPARA tool connection point offset, relative to the tool moving frame origin which is in the last linkage axis,
-  // (TCP: tool center/connection point) of the robot,
-  // the plane of measured offset must be alligned with home position plane
-  #define TPARA_TCP_OFFSET_X    27.0     // (mm) Tool flange: 27 (distance from pivot to bolt holes), extruder tool: 50.0,
-  #define TPARA_TCP_OFFSET_Y     0.0     // (mm)
-  #define TPARA_TCP_OFFSET_Z   -65.0     // (mm) Tool flange (bottom): -6 (caution as Z 0 posiion will crash second linkage to the floor, -35 is safe for testing with no tool), extruder tool (depends on extruder): -65.0
+  #define TPARA_OFFSET_X    0     // (mm)
+  #define TPARA_OFFSET_Y    0     // (mm)
+  #define TPARA_OFFSET_Z    0     // (mm)
 
   #define FEEDRATE_SCALING        // Convert XY feedrate from mm/s to degrees/s on the fly
 
   // Radius around the center where the arm cannot reach
-  // For now use a hardcoded uniform limit, although it should be calculated, or fix a limit for each axis angle
-  #define MIDDLE_DEAD_ZONE_R   100    // (mm)
-
-  // Max angle between L1 and L2
-  #define TPARA_MAX_L1L2_ANGLE 140.0f // (degrees)
-#endif // AXEL_TPARA
+  #define MIDDLE_DEAD_ZONE_R   0  // (mm)
+#endif
 
 // @section polar
 
@@ -1230,122 +1198,41 @@
   #define FEEDRATE_SCALING                  // Convert XY feedrate from mm/s to degrees/s on the fly
 #endif
 
-// @section PENTA_AXIS_TRT
-
-/** 
- * For a 5 axis CNC machine in tilting rotary table configuration. 
- * This machine has a rotary table (C axis) mounted on a tilting table
- * (A axis parallel to the X axis, or B axis parallel to the Y axis).
- * More information can be found at https://github.com/DerAndere1/Marlin/wiki/Marlin2ForPipetBot:-five-axis-CNC
- */
-//#define PENTA_AXIS_TRT
-#if ENABLED(PENTA_AXIS_TRT)
- 
-  //Machine rotary zero point offsets.
-
-  /** 
-   * The distance along the X axis from machine zero point to the center of rotation. Measured when tool 0 is 
-   * selected and when all axes are at machine position 0 so that the table is oriented horizontally. 
-   * The center of rotation is usually the center of the top surface of the table.
-   */
-  #define DEFAULT_MRZP_OFFSET_X 0.0 // (mm)
-
-  /** 
-   * The distance along the Y axis from machine zero point to the center of rotation. Measured when tool 0 is 
-   * selected and when all axes are at machine position 0 so that the table is oriented horizontally. 
-   * The center of rotation is usually the center of the top surface of the table.
-   */
-  #define DEFAULT_MRZP_OFFSET_Y 0.0 // (mm)
-  
-  /** 
-   * The distance along the Z axis from machine zero point to the center of rotation. Measured when tool 0 is 
-   * selected and when all axes are at machine position 0 so that the table is oriented horizontally. 
-   * The center of rotation is usually the center of the top surface of the table.
-   */
-  #define DEFAULT_MRZP_OFFSET_Z 0.0 // (mm)
-
-  // For a machine with XYZBC axes, this is the distance along the x axis from the vertical centerline of the
-  // joint of the horizontal rotary table to the horizontal centerline of the joint that tilts the table.
-  #define DEFAULT_ROTATIONAL_JOINT_OFFSET_X 0.0 // (mm)
-
-  // For a machine with XYZAC axes, this is the distance along the y axis from the vertical centerline of the
-  // joint of the horizontal table to the horizontal centerline of the joint that tilts the table. 
-  #define DEFAULT_ROTATIONAL_JOINT_OFFSET_Y 0.0 // (mm)
-
-  // This is the distance along the Z axis from the surface at the top of the table to the horizontal
-  // centerline of the joint that tilts the table when the table is oriented horizontally.
-  #define DEFAULT_ROTATIONAL_JOINT_OFFSET_Z 0.0 // (mm)
-
-  // Moves involving rotational axes are broken up into small straight segments (linear interpolation).
-  // This is a trade-off between visible corners (not enough segments)
-  // and processor overload (too many expensive sqrt calls).
-  #define DEFAULT_SEGMENTS_PER_SECOND 200
-
-  // Print surface diameter/2
-  #define PRINTABLE_RADIUS 100.0    // (mm)
-#endif
-
-// @section PENTA_AXIS_HT
-
-/**
- * For a 5 axis CNC machine in head-table configuration. 
- * This machine has a swivel head and a horizontal rotary table.
- */
-//#define PENTA_AXIS_HT
-#if ENABLED(PENTA_AXIS_HT)
-
-  // This is the distance from the tip of tool 0 (the gauge line) to the 
-  // horizontal centerline of the joint that tilts the tool head. Measured when all axes are at machine 
-  // position 0 so that the tool holder is oriented parallel to the Z axis.
-  #define DEFAULT_ROTATIONAL_JOINT_OFFSET_Z 100.0 // (mm)
-
-  // Moves involving rotational axes are broken up into small straight segments (linear interpolation).
-  // This is a trade-off between visible corners (not enough segments)
-  // and processor overload (too many expensive sqrt calls).
-  #define DEFAULT_SEGMENTS_PER_SECOND 200
-
-  // Print surface diameter/2
-  #define PRINTABLE_RADIUS 100.0    // (mm)
-#endif
+//===========================================================================
+//========================= Rep5x 5-Axis Kinematics =========================
+//===========================================================================
 
 // @section PENTA_AXIS_HH
 
-/** 
- * For a 5 axis CNC machine in head-head configuration. 
- * This machine has a tilting toolhead mounted on a rotary joint (C-axis) that rotates around the Z axis.
- * The axis of rotation of the tilting joint (B-axis) is oriented parallel to the Y axis when all axes are at machine position 0.
- * More information can be found at https://github.com/DerAndere1/Marlin/wiki/Marlin2ForPipetBot:-five-axis-CNC
+/**
+ * Rep5x 5-axis printer - Head-head configuration
+ * C-axis (yaw): rotates toolhead around Z axis
+ * B-axis (tilt): tilts toolhead, rotation parallel to Y at zero position
+ *
+ * More info: https://rep5x.com
+ * Kinematics: https://github.com/DerAndere1/Marlin/wiki/Marlin2ForPipetBot:-five-axis-CNC
  */
-//#define PENTA_AXIS_HH
+#define PENTA_AXIS_HH
 #if ENABLED(PENTA_AXIS_HH)
-   
-  // This is the distance from the tip of tool 0 (the gauge line) to the 
-  // horizontal centerline of the joint that tilts the toolhead. Measured when all axes are at machine 
-  // position 0 so that the toolhead is oriented parallel to the Z axis.
-  #define DEFAULT_ROTATIONAL_JOINT_OFFSET_Z 0.0 // (mm)
+  // Rep5x LC: Y-offset from yaw axis center to tool
+  #define DEFAULT_ROTATIONAL_JOINT_OFFSET_Y 1.6  // (mm)
 
-  // For a machine with XYZBC axes, this is the distance along the y axis from the vertical centerline of the
-  // joint that rotates the toolhead to the vertical centerline of tool 0. Measured when all axes are at machine 
-  // position 0 so that the toolhead is oriented parallel to the Z axis.
-  #define DEFAULT_ROTATIONAL_JOINT_OFFSET_Y 0.0 // (mm)
+  // Rep5x LB: Z-offset from tilt axis to nozzle tip
+  #define DEFAULT_ROTATIONAL_JOINT_OFFSET_Z 54.67  // (mm)
 
-  // Moves involving rotational axes are broken up into small straight segments (linear interpolation).
-  // This is a trade-off between visible corners (not enough segments)
-  // and processor overload (too many expensive function calls).
+  // Segments per second for rotational moves
   #define DEFAULT_SEGMENTS_PER_SECOND 200
 
-  // Print surface diameter/2
-  #define PRINTABLE_RADIUS 100.0    // (mm)
+  // Print surface radius
+  #define PRINTABLE_RADIUS 100.0  // (mm)
 #endif
 
-// @section machine
-
-// Articulated robot (arm). Joints are directly mapped to axes with no kinematics.
-//#define ARTICULATED_ROBOT_ARM
-
-// For a hot wire cutter with parallel horizontal axes (X, I) where the heights of the two wire
-// ends are controlled by parallel axes (Y, J). Joints are directly mapped to axes (no kinematics).
-//#define FOAMCUTTER_XYUV
+// Calibration correction - compensates for mechanical errors
+// Use M667 to set Fourier coefficients from Rep5x Calibrator tool
+// Requires PENTA_AXIS_HH (defined above)
+#ifdef PENTA_AXIS_HH
+  #define CALIBRATION_CORRECTION
+#endif
 
 //===========================================================================
 //============================== Endstop Settings ===========================
@@ -1412,10 +1299,10 @@
 #define Y_MIN_ENDSTOP_HIT_STATE HIGH
 #define Y_MAX_ENDSTOP_HIT_STATE HIGH
 #define Z_MIN_ENDSTOP_HIT_STATE HIGH
-#define Z_MAX_ENDSTOP_HIT_STATE HIGH
-#define I_MIN_ENDSTOP_HIT_STATE HIGH
+#define Z_MAX_ENDSTOP_HIT_STATE LOW
+#define I_MIN_ENDSTOP_HIT_STATE HIGH   // A-axis endstop
 #define I_MAX_ENDSTOP_HIT_STATE HIGH
-#define J_MIN_ENDSTOP_HIT_STATE HIGH
+#define J_MIN_ENDSTOP_HIT_STATE LOW    // B-axis endstop (inverted, using J_STOP_PIN)
 #define J_MAX_ENDSTOP_HIT_STATE HIGH
 #define K_MIN_ENDSTOP_HIT_STATE HIGH
 #define K_MAX_ENDSTOP_HIT_STATE HIGH
@@ -1473,7 +1360,7 @@
  * Override with M92 (when enabled below)
  *                                      X, Y, Z [, I [, J [, K...]]], E0 [, E1[, E2...]]
  */
-#define DEFAULT_AXIS_STEPS_PER_UNIT   { 80, 80, 400, 500 }
+#define DEFAULT_AXIS_STEPS_PER_UNIT   { 80, 80, 400, 26.666, 26.68, 415 }
 
 /**
  * Enable support for M92. Disable to save at least ~530 bytes of flash.
@@ -1485,7 +1372,7 @@
  * Override with M203
  *                                      X, Y, Z [, I [, J [, K...]]], E0 [, E1[, E2...]]
  */
-#define DEFAULT_MAX_FEEDRATE          { 300, 300, 5, 25 }
+#define DEFAULT_MAX_FEEDRATE          { 500, 500, 600, 3600, 3600, 45 }  // Units: mm/s
 
 //#define LIMITED_MAX_FR_EDITING        // Limit edit via M203 or LCD to DEFAULT_MAX_FEEDRATE * 2
 #if ENABLED(LIMITED_MAX_FR_EDITING)
@@ -1498,7 +1385,7 @@
  * Override with M201
  *                                      X, Y, Z [, I [, J [, K...]]], E0 [, E1[, E2...]]
  */
-#define DEFAULT_MAX_ACCELERATION      { 3000, 3000, 100, 10000 }
+#define DEFAULT_MAX_ACCELERATION      { 3000, 3000, 500, 1000, 1000, 10000 }
 
 //#define LIMITED_MAX_ACCEL_EDITING     // Limit edit via M201 or LCD to DEFAULT_MAX_ACCELERATION * 2
 #if ENABLED(LIMITED_MAX_ACCEL_EDITING)
@@ -1525,7 +1412,7 @@
  * When changing speed and direction, if the difference is less than the
  * value set here, it may happen instantaneously.
  */
-//#define CLASSIC_JERK
+#define CLASSIC_JERK
 #if ENABLED(CLASSIC_JERK)
   #define DEFAULT_XJERK 10.0
   #define DEFAULT_YJERK 10.0
@@ -1588,7 +1475,7 @@
  * The probe replaces the Z-MIN endstop and is used for Z homing.
  * (Automatically enables USE_PROBE_FOR_Z_HOMING.)
  */
-#define Z_MIN_PROBE_USES_Z_MIN_ENDSTOP_PIN
+//#define Z_MIN_PROBE_USES_Z_MIN_ENDSTOP_PIN
 
 // Force the use of the probe for Z-axis homing
 //#define USE_PROBE_FOR_Z_HOMING
@@ -1801,7 +1688,7 @@
  * Nozzle-to-Probe offsets { X, Y, Z }
  *
  * X and Y offset
- *   Use a caliper or ruler to measure the distance (in mm) from the tip of
+ *   Use a caliper or ruler to measure the distance from the tip of
  *   the Nozzle to the center-point of the Probe in the X and Y axes.
  *
  * Z offset
@@ -1837,7 +1724,7 @@
  *     |    [-]    |
  *     O-- FRONT --+
  */
-#define NOZZLE_TO_PROBE_OFFSET { 10, 10, 0 } // (mm) X, Y, Z distance from Nozzle tip to Probe trigger-point
+#define NOZZLE_TO_PROBE_OFFSET { 10, 10, 0 }
 
 // Enable and set to use a specific tool for probing. Disable to allow any tool.
 #define PROBING_TOOL 0
@@ -1981,8 +1868,8 @@
 #define Y_ENABLE_ON LOW
 #define Z_ENABLE_ON LOW
 #define E_ENABLE_ON LOW // For all extruders
-//#define I_ENABLE_ON LOW
-//#define J_ENABLE_ON LOW
+#define I_ENABLE_ON LOW
+#define J_ENABLE_ON LOW
 //#define K_ENABLE_ON LOW
 //#define U_ENABLE_ON LOW
 //#define V_ENABLE_ON LOW
@@ -2014,8 +1901,8 @@
 #define INVERT_X_DIR false
 #define INVERT_Y_DIR true
 #define INVERT_Z_DIR false
-//#define INVERT_I_DIR false
-//#define INVERT_J_DIR false
+#define INVERT_I_DIR true
+#define INVERT_J_DIR false
 //#define INVERT_K_DIR false
 //#define INVERT_U_DIR false
 //#define INVERT_V_DIR false
@@ -2048,18 +1935,19 @@
 //#define Z_CLEARANCE_FOR_HOMING  4   // (mm) Minimal Z height before homing (G28) for Z clearance above the bed, clamps, ...
                                       // You'll need this much clearance above Z_MAX_POS to avoid grinding.
 
-//#define Z_AFTER_HOMING         10   // (mm) Height to move to after homing (if Z was homed)
-//#define XY_AFTER_HOMING { 10, 10 }  // (mm) Move to an XY position after homing (and raising Z)
+//#define ALLOW_Z_AFTER_HOMING           // Allow Z_AFTER_HOMING with Z max homing
+//#define Z_AFTER_HOMING         66   // (mm) Height to move to after homing (20mm down from top)
+//#define XY_AFTER_HOMING { 110, 110 }  // (mm) Move to an XY position after homing (and raising Z)
 
-//#define EVENT_GCODE_AFTER_HOMING "M300 P440 S200"  // Commands to run after G28 (and move to XY_AFTER_HOMING)
+//#define EVENT_GCODE_AFTER_HOMING "G90\nG0 Z66 F3000\nG0 X110 Y110 F2400\nG0 A0 B0 F3000"  // Commands to run after G28 - XY at 2400mm/min (40mm/s)
 
 // Direction of endstops when homing; 1=MAX, -1=MIN
 // :[-1,1]
-#define X_HOME_DIR -1
+#define X_HOME_DIR 1
 #define Y_HOME_DIR -1
-#define Z_HOME_DIR -1
-//#define I_HOME_DIR -1
-//#define J_HOME_DIR -1
+#define Z_HOME_DIR 1
+#define I_HOME_DIR -1   // A-axis homes to MIN
+#define J_HOME_DIR -1
 //#define K_HOME_DIR -1
 //#define U_HOME_DIR -1
 //#define V_HOME_DIR -1
@@ -2088,15 +1976,15 @@
 
 // Travel limits (linear=mm, rotational=°) after homing, corresponding to endstop positions.
 #define X_MIN_POS 0
-#define Y_MIN_POS 0
+#define Y_MIN_POS -40
 #define Z_MIN_POS 0
 #define X_MAX_POS X_BED_SIZE
-#define Y_MAX_POS Y_BED_SIZE
-#define Z_MAX_POS 200
-//#define I_MIN_POS 0
-//#define I_MAX_POS 50
-//#define J_MIN_POS 0
-//#define J_MAX_POS 50
+#define Y_MAX_POS 200
+#define Z_MAX_POS 174.6
+#define I_MIN_POS -360
+#define I_MAX_POS 360
+#define J_MIN_POS -135
+#define J_MAX_POS 135
 //#define K_MIN_POS 0
 //#define K_MAX_POS 50
 //#define U_MIN_POS 0
@@ -2144,13 +2032,6 @@
 #endif
 
 #if ANY(MIN_SOFTWARE_ENDSTOPS, MAX_SOFTWARE_ENDSTOPS)
-  /**
-   * Abort printing when any software endstop is triggered.
-   * This feature is enabled with 'M541 S1' or from the LCD menu.
-   * Software endstops must be activated for this option to work.
-   */
-  //#define ABORT_ON_SOFTWARE_ENDSTOP
-
   //#define SOFT_ENDSTOPS_MENU_ITEM  // Enable/Disable software endstops from the LCD
 #endif
 
@@ -2372,6 +2253,12 @@
   #endif
 
   /**
+   * Add Z offset (M424 Z) that applies to all moves at the planner level.
+   * This Z offset will be automatically set to the middle value with G29.
+   */
+  //#define GLOBAL_MESH_Z_OFFSET
+
+  /**
    * For Cartesian machines, instead of dividing moves on mesh boundaries,
    * split up moves into short segments like a Delta. This follows the
    * contours of the bed more closely than edge-to-edge straight moves.
@@ -2537,7 +2424,7 @@
 //#define MANUAL_X_HOME_POS 0
 //#define MANUAL_Y_HOME_POS 0
 //#define MANUAL_Z_HOME_POS 0
-//#define MANUAL_I_HOME_POS 0
+#define MANUAL_I_HOME_POS 0
 //#define MANUAL_J_HOME_POS 0
 //#define MANUAL_K_HOME_POS 0
 //#define MANUAL_U_HOME_POS 0
@@ -2560,7 +2447,7 @@
 #endif
 
 // Homing speeds (linear=mm/min, rotational=°/min)
-#define HOMING_FEEDRATE_MM_M { (50*60), (50*60), (4*60) }
+#define HOMING_FEEDRATE_MM_M { (50*60), (50*60), (15*60), (90*60), (45*60) }
 
 // Edit homing feedrates with M210 and MarlinUI menu items
 //#define EDITABLE_HOMING_FEEDRATE
@@ -2641,12 +2528,12 @@
  *   M501 - Read settings from EEPROM. (i.e., Throw away unsaved changes)
  *   M502 - Revert settings to "factory" defaults. (Follow with M500 to init the EEPROM.)
  */
-//#define EEPROM_SETTINGS     // Persistent storage with M500 and M501
+#define EEPROM_SETTINGS     // Persistent storage with M500 and M501
 //#define DISABLE_M503        // Saves ~2700 bytes of flash. Disable for release!
 #define EEPROM_CHITCHAT       // Give feedback on EEPROM commands. Disable to save flash.
 #define EEPROM_BOOT_SILENT    // Keep M503 quiet and only give errors during first load
 #if ENABLED(EEPROM_SETTINGS)
-  //#define EEPROM_AUTO_INIT  // Init EEPROM automatically on any errors.
+  #define EEPROM_AUTO_INIT  // Init EEPROM automatically on any errors.
   //#define EEPROM_INIT_NOW   // Init EEPROM on first boot after a new build.
 #endif
 
@@ -2668,11 +2555,6 @@
 // G20/G21 Inch mode support
 //
 //#define INCH_MODE_SUPPORT
-
-//
-// G93/G94 Feedrate mode support
-//
-//#define FEEDRATE_MODE_SUPPORT
 
 //
 // M149 Set temperature units support
@@ -2709,11 +2591,11 @@
  *    P1  Raise the nozzle always to Z-park height.
  *    P2  Raise the nozzle by Z-park amount, limited to Z_MAX_POS.
  */
-//#define NOZZLE_PARK_FEATURE
+#define NOZZLE_PARK_FEATURE
 
 #if ENABLED(NOZZLE_PARK_FEATURE)
   // Specify a park position as { X, Y, Z_raise }
-  #define NOZZLE_PARK_POINT { (X_MIN_POS + 10), (Y_MAX_POS - 10), 20 }
+  #define NOZZLE_PARK_POINT { (X_MIN_POS + 10), (Y_MIN_POS + 10), 20 }
   #define NOZZLE_PARK_MOVE          0   // Park motion: 0 = XY Move, 1 = X Only, 2 = Y Only, 3 = X before Y, 4 = Y before X
   #define NOZZLE_PARK_Z_RAISE_MIN   2   // (mm) Always raise Z by at least this distance
   #define NOZZLE_PARK_XY_FEEDRATE 100   // (mm/s) X and Y axes feedrate (also used for delta Z axis)
@@ -2891,7 +2773,7 @@
  * SD Card support is disabled by default. If your controller has an SD slot,
  * you must uncomment the following option or it won't work.
  */
-//#define SDSUPPORT
+#define SDSUPPORT
 
 /**
  * SD CARD: ENABLE CRC
@@ -3322,7 +3204,7 @@
 // BigTreeTech Mini 12864 V1.0 / V2.0 is an alias for FYSETC_MINI_12864_2_1. Type A/B. NeoPixel RGB Backlight.
 // https://github.com/bigtreetech/MINI-12864
 //
-//#define BTT_MINI_12864
+#define BTT_MINI_12864
 
 //
 // BEEZ MINI 12864 is an alias for FYSETC_MINI_12864_2_1. Type A/B. NeoPixel RGB Backlight.
@@ -3467,13 +3349,16 @@
  *  - Download https://github.com/CrealityOfficial/Ender-3S1/archive/3S1_Plus_Screen.zip
  *  - Copy the downloaded DWIN_SET folder to the SD card.
  *
+ * CREALITY_TOUCH
+ *  - CR-6 OEM touch screen. A DWIN display with touch.
+ *
  * Flash display with DGUS Displays for Marlin:
  *  - Format the SD card to FAT32 with an allocation size of 4kb.
  *  - Download files as specified for your type of display.
  *  - Plug the microSD card into the back of the display.
  *  - Boot the display and wait for the update to complete.
  *
- * :[ 'ORIGIN', 'FYSETC', 'HYPRECY', 'MKS', 'RELOADED', 'IA_CREALITY', 'E3S1PRO' ]
+ * :[ 'ORIGIN', 'FYSETC', 'HYPRECY', 'MKS', 'RELOADED', 'IA_CREALITY', 'E3S1PRO', 'CREALITY_TOUCH' ]
  */
 //#define DGUS_LCD_UI ORIGIN
 #if DGUS_UI_IS(MKS)
@@ -3521,6 +3406,12 @@
 // 320x240 Nextion 2.8" serial TFT Resistive Touch Screen NX3224T028
 //
 //#define NEXTION_TFT
+
+//
+// PanelDue touch controller by Escher3D
+// http://escher3d.com/pages/order/products/product2.php
+//
+//#define PANELDUE
 
 //
 // Third-party or vendor-customized controller interfaces.
@@ -3853,17 +3744,17 @@
 #endif
 
 // Support for Adafruit NeoPixel LED driver
-//#define NEOPIXEL_LED
+#define NEOPIXEL_LED
 #if ENABLED(NEOPIXEL_LED)
-  #define NEOPIXEL_TYPE          NEO_GRBW // NEO_GRBW, NEO_RGBW, NEO_GRB, NEO_RBG, etc.
+  #define NEOPIXEL_TYPE          NEO_RGB  // NEO_GRBW, NEO_RGBW, NEO_GRB, NEO_RBG, etc.
                                           // See https://github.com/adafruit/Adafruit_NeoPixel/blob/master/Adafruit_NeoPixel.h
-  //#define NEOPIXEL_PIN                4 // LED driving pin
+  //#define NEOPIXEL_PIN                4 // LED driving pin (auto-configured for BTT Mini 12864)
   //#define NEOPIXEL2_TYPE  NEOPIXEL_TYPE
   //#define NEOPIXEL2_PIN               5
-  #define NEOPIXEL_PIXELS              30 // Number of LEDs in the strip. (Longest strip when NEOPIXEL2_SEPARATE is disabled.)
-  #define NEOPIXEL_IS_SEQUENTIAL          // Sequential display for temperature change - LED by LED. Disable to change all LEDs at once.
-  #define NEOPIXEL_BRIGHTNESS         127 // Initial brightness (0-255)
-  //#define NEOPIXEL_STARTUP_TEST         // Cycle through colors at startup
+  #define NEOPIXEL_PIXELS               3 // Number of LEDs in the strip. (Longest strip when NEOPIXEL2_SEPARATE is disabled.)
+  //#define NEOPIXEL_IS_SEQUENTIAL        // Sequential display for temperature change - LED by LED. Disable to change all LEDs at once.
+  #define NEOPIXEL_BRIGHTNESS         255 // Initial brightness (0-255)
+  #define NEOPIXEL_STARTUP_TEST           // Cycle through colors at startup
 
   // Support for second Adafruit NeoPixel LED driver controlled with M150 S1 ...
   //#define NEOPIXEL2_SEPARATE
@@ -3877,11 +3768,11 @@
   #endif
 
   // Use some of the NeoPixel LEDs for static (background) lighting
-  //#define NEOPIXEL_BKGD_INDEX_FIRST   0 // Index of the first background LED
-  //#define NEOPIXEL_BKGD_INDEX_LAST    5 // Index of the last background LED
-  //#define NEOPIXEL_BKGD_COLOR         { 255, 255, 255, 0 }  // R, G, B, W
+  #define NEOPIXEL_BKGD_INDEX_FIRST   0 // Index of the first background LED
+  #define NEOPIXEL_BKGD_INDEX_LAST    2 // Index of the last background LED
+  #define NEOPIXEL_BKGD_COLOR         { 0, 255, 0, 0 }  // R, G, B, W (Green)
   //#define NEOPIXEL_BKGD_TIMEOUT_COLOR {  25,  25,  25, 0 }  // R, G, B, W
-  //#define NEOPIXEL_BKGD_ALWAYS_ON       // Keep the backlight on when other NeoPixels are off
+  #define NEOPIXEL_BKGD_ALWAYS_ON       // Keep the backlight on when other NeoPixels are off
 #endif
 
 /**
