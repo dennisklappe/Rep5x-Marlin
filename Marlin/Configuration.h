@@ -1418,8 +1418,8 @@
   #define DEFAULT_YJERK 10.0
   #define DEFAULT_ZJERK  0.3
   #define DEFAULT_EJERK  5.0
-  //#define DEFAULT_IJERK  0.3
-  //#define DEFAULT_JJERK  0.3
+  #define DEFAULT_IJERK  20.0  // C-axis (yaw) jerk in deg/s
+  #define DEFAULT_JJERK  20.0  // B-axis (tilt) jerk in deg/s
   //#define DEFAULT_KJERK  0.3
   //#define DEFAULT_UJERK  0.3
   //#define DEFAULT_VJERK  0.3
