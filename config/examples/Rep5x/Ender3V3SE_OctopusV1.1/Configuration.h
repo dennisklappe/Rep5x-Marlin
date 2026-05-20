@@ -1415,12 +1415,15 @@
  */
 #define CLASSIC_JERK
 #if ENABLED(CLASSIC_JERK)
+  // Minimum jerk to avoid stutter on segmented motion: > segments_per_second / steps_per_unit
+  // (https://github.com/MarlinFirmware/MarlinDocumentation/issues/617#issuecomment-4281178502)
+  // Rep5x defaults: segs/sec=200, steps/mm X/Y=80 Z=400, steps/deg C/B~26.7
   #define DEFAULT_XJERK 10.0
   #define DEFAULT_YJERK 10.0
-  #define DEFAULT_ZJERK  0.3
+  #define DEFAULT_ZJERK  1.0
   #define DEFAULT_EJERK  5.0
-  //#define DEFAULT_IJERK  0.3
-  //#define DEFAULT_JJERK  0.3
+  #define DEFAULT_IJERK 15.0
+  #define DEFAULT_JJERK 15.0
   //#define DEFAULT_KJERK  0.3
   //#define DEFAULT_UJERK  0.3
   //#define DEFAULT_VJERK  0.3
